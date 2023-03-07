@@ -1,0 +1,115 @@
+---
+title: "Indexing techproducts"
+author: "Cath Riddoch"
+format: html
+editor: visual
+---
+
+## Starting the server
+
+\``/bin/solr start -e cloud`\`
+
+and started two nodes
+
+![](Screenshot%202023-02-28%20at%2010.46.17%20am.png)
+
+Adding data to index
+
+\``bin/post -c techproducts example/exampledocs/*`\`
+
+Install solarium
+
+```{r}
+#install.packages("solrium")
+library(solrium)
+
+# load tidyverse
+library(tidyverse)
+```
+
+```{r}
+# Create a Solr client
+solr_client <- SolrClient$new()
+```
+
+```{r}
+
+ if (!solr_client$collection_exists("techproducts")) {
+	 solr_client$collection_create(name = "techproducts",
+                              maxShardsPerNode = 2,
+                              numShards = 2,
+                              replicationFactor = 2,
+                              collection.configName = "techproducts"
+                              )
+ }
+
+```
+
+This creates an empty collection. Search for everything carried out to check.
+
+```{r}
+solr_client$search(name = "techproducts", params = list(q = "*:*"))
+```
+
+```{r}
+# function to index all files in a folder
+uploadAll<- function(path, collection){
+  jsonFiles <- list.files(path = path,
+                          pattern = "*.json",
+                          full.names = TRUE,
+                          recursive = FALSE
+                          )
+  jsonUpload <-function(file) (solr_client$update_json(file, collection))
+  map(jsonFiles, jsonUpload)
+
+  xmlFiles <- list.files(path = path,
+                         pattern = "*.xml",
+                         full.names = TRUE,
+                         recursive = FALSE
+                         )
+  xmlUpload <-function(file) (solr_client$update_xml(file, collection))
+  map(xmlFiles, xmlUpload)
+
+  csvFiles <- list.files(path = path,
+                       pattern = "*.csv",
+                       full.names = TRUE,
+                       recursive = FALSE
+                       )
+  csvUpload <-function(file) (solr_client$update_csv(file, collection))
+  map(csvFiles, csvUpload)
+}
+
+```
+
+```{r}
+# runs the upload function
+uploadAll("solr-files/example/exampledocs", "techproducts")
+```
+
+```{r}
+solr_client$search(name = "techproducts", params = list(q = "foundation"))
+```
+
+```{r}
+genSearch <- solr_client$search(name = "techproducts", params = list(q = "electronics"))
+attr(genSearch, "numFound")
+
+```
+
+```{r}
+searchCat <- solr_client$search(name = "techproducts", params = list(q = "cat:electronics"))
+attr(searchCat, "numFound")
+```
+
+```{r}
+compSearch <- solr_client$search(name = "techproducts", params = list(q = "+electronics +music"))
+attr(compSearch, "numFound")
+```
+
+Find all electronics but don't contain term "music"
+
+```{r}
+mixSearch <- solr_client$search(name = "techproducts", params = list(q = "+electronics -music"))
+attr(mixSearch, "numFound")
+
+```
