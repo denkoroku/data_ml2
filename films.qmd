@@ -1,0 +1,126 @@
+---
+title: "Indexing and Searching Films"
+author: "Cath Riddoch"
+format:
+  html:
+    df-print: paged
+---
+
+## Initial setup 
+
+```{r}
+#| warning: false
+
+#install.packages("solrium")
+library(solrium) 
+
+# load tidyverse
+library(tidyverse, quietly = TRUE)
+```
+
+```{r}
+# Create a Solr client
+solr_client <- SolrClient$new()
+```
+
+```{r}
+#create the collection
+ if (!solr_client$collection_exists("films")) {
+	 solr_client$collection_create(name = "films",
+                                  maxShardsPerNode = 2,
+                                  numShards = 2,
+                                  replicationFactor = 2,
+              
+                                )
+ }
+```
+
+## Editing the Schema
+
+Above setup does not define configset so the default one is used. This uses "field guessing" rather than a schema and is therefore not recommended in production but can be used combined with the Schema API to define new fields that are of specific interest.
+
+`schema(solr_client, name = "films", "fields")`
+
+![Before editing schema](images/Screenshot%202023-03-08%20at%202.49.23%20pm.png)
+
+Edit at the command line
+
+``` ``curl -X POST -H 'Content-type:application/json' --data-binary '{"add-field": {"name":"name", "type":"text_general", "multiValued":false, "stored":true}}' http://localhost:8983/solr/films/schema`` ```
+
+```{r}
+schema(solr_client, name = "films", "fields")
+```
+
+This shows that now there is an explicitly defined field called name which is a text field.
+
+Defining a copy field
+
+This field is to take all data from all fields and index it into a field named `_text_` to prevent needing to define a field to search every query.
+
+`curl -X POST -H 'Content-type:application/json' --data-binary '{"add-copy-field" : {"source":"*","dest":"_text_"}}' http://localhost:8983/solr/films/schema`
+
+## Indexing data
+
+```{r}
+# function to index all files in a folder
+uploadAll<- function(path, collection){
+  jsonFiles <- list.files(path = path,
+                          pattern = "*.json*",
+                          full.names = TRUE,
+                          recursive = FALSE
+                          )
+  jsonUpload <-function(file) (solr_client$update_json(file, collection))
+  map(jsonFiles, jsonUpload)
+
+  xmlFiles <- list.files(path = path,
+                         pattern = "*.xml",
+                         full.names = TRUE,
+                         recursive = FALSE
+                         )
+  xmlUpload <-function(file) (solr_client$update_xml(file, collection))
+  map(xmlFiles, xmlUpload)
+
+  csvFiles <- list.files(path = path,
+                       pattern = "*.csv",
+                       full.names = TRUE,
+                       recursive = FALSE
+                       )
+  csvUpload <-function(file) (solr_client$update_csv(file, collection))
+  map(csvFiles, csvUpload)
+}
+uploadAll("solr-files/example/films", "films")
+```
+
+```{r}
+# searching everything
+checkUpload <- solr_client$search(name = "films", params = list(q = "*:*"))
+attr(checkUpload, "numFound")
+```
+
+```{r}
+solr_facet(solr_client, "films", params = list(q='*:*', facet.field='genre_str'))
+```
+
+```{r}
+# controlling the number of items in a bucket
+solr_facet(solr_client, "films", params = list(q='*:*', facet.field='genre_str',
+facet.mincount='200'))
+```
+
+```{r}
+solr_facet(solr_client,"films", params = list(q = '*:*',
+                                              facet.range = 'initial_release_date',
+                                              facet.limit = "300",
+                                              facet.range.start = 'NOW/YEAR-25YEARS',
+                                              facet.range.end = 'NOW',
+                                              facet.range.gap = '+1YEAR'
+                                              )
+           )
+```
+
+```{r}
+solr_facet(solr_client,"films", params = list(q='*:*',
+                                              facet.pivot = c("genre_str", "directed_by_str")
+                                              )
+           )
+```

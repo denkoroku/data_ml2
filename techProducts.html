@@ -98,6 +98,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <link href="techProducts_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="techProducts_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 
+<link href="techProducts_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
+<script src="techProducts_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
+
 
 </head>
 
@@ -132,114 +135,153 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <section id="starting-the-server" class="level2">
 <h2 class="anchored" data-anchor-id="starting-the-server">Starting the server</h2>
-<p>``<code>/bin/solr start -e cloud</code>``</p>
+<p>`<code>/bin/solr start -e cloud</code>`</p>
 <p>and started two nodes</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/Screenshot%202023-02-28%20at%2010.46.17%20am.png" class="img-fluid figure-img"></p>
-<p></p><figcaption class="figure-caption">SolrCloud with two shards</figcaption><p></p>
-</figure>
-</div>
-<p>Adding data to index</p>
-<p>`<code>bin/post -c techproducts example/exampledocs/*</code>`</p>
-<p>Install solarium</p>
+<p><img src="Screenshot%202023-02-28%20at%2010.46.17%20am.png" class="img-fluid"></p>
+</section>
+<section id="initial-setup-of-solarium" class="level2">
+<h2 class="anchored" data-anchor-id="initial-setup-of-solarium">Initial setup of Solarium</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(solrium)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages("solrium")</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(solrium, <span class="at">quietly =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># load tidyverse</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse, <span class="at">quietly =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+✔ ggplot2 3.4.0     ✔ purrr   1.0.1
+✔ tibble  3.1.8     ✔ dplyr   1.1.0
+✔ tidyr   1.3.0     ✔ stringr 1.5.0
+✔ readr   2.1.3     ✔ forcats 1.0.0
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()</code></pre>
+</div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a Solr client</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>solr_client <span class="ot">&lt;-</span> SolrClient<span class="sc">$</span><span class="fu">new</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a Solr client</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>solr_client <span class="ot">&lt;-</span> SolrClient<span class="sc">$</span><span class="fu">new</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"*:*"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#create the collection</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a> <span class="cf">if</span> (<span class="sc">!</span>solr_client<span class="sc">$</span><span class="fu">collection_exists</span>(<span class="st">"techproducts"</span>)) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>     solr_client<span class="sc">$</span><span class="fu">collection_create</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">maxShardsPerNode =</span> <span class="dv">2</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">numShards =</span> <span class="dv">2</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                              <span class="at">replicationFactor =</span> <span class="dv">2</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                              <span class="at">collection.configName =</span> <span class="st">"techproducts"</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                              )</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a> }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This creates an empty collection. Search for everything carried out to check.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#check collection exists and is empty</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"*:*"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["id"],"name":[1],"type":["chr"],"align":["left"]},{"label":["name"],"name":[2],"type":["chr"],"align":["left"]},{"label":["manu"],"name":[3],"type":["chr"],"align":["left"]},{"label":["manu_id_s"],"name":[4],"type":["chr"],"align":["left"]},{"label":["cat"],"name":[5],"type":["chr"],"align":["left"]},{"label":["features"],"name":[6],"type":["chr"],"align":["left"]},{"label":["weight"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["price"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["price_c"],"name":[9],"type":["chr"],"align":["left"]},{"label":["popularity"],"name":[10],"type":["int"],"align":["right"]},{"label":["inStock"],"name":[11],"type":["lgl"],"align":["right"]},{"label":["store"],"name":[12],"type":["chr"],"align":["left"]},{"label":["manufacturedate_dt"],"name":[13],"type":["chr"],"align":["left"]},{"label":["_version_"],"name":[14],"type":["dbl"],"align":["right"]},{"label":["price_c____l_ns"],"name":[15],"type":["int"],"align":["right"]},{"label":["_src_"],"name":[16],"type":["chr"],"align":["left"]},{"label":["includes"],"name":[17],"type":["chr"],"align":["left"]},{"label":["payloads"],"name":[18],"type":["chr"],"align":["left"]}],"data":[{"1":"IW-02","2":"iPod & iPod Mini USB 2.0 Cable","3":"Belkin","4":"belkin","5":"electronics,connector","6":"car power adapter for iPod, white","7":"2.0","8":"11.50","9":"11.50,USD","10":"1","11":"FALSE","12":"37.7752,-122.4232","13":"2006-02-14T23:55:59Z","14":"1.759716e+18","15":"1150","16":"NA","17":"NA","18":"NA"},{"1":"GB18030TEST","2":"Test with some GB18030 encoded characters","3":"NA","4":"NA","5":"NA","6":"No accents here,这是一个功能,This is a feature (translated),这份文件是很有光泽,This document is very shiny (translated)","7":"NA","8":"0.00","9":"0.0,USD","10":"NA","11":"TRUE","12":"NA","13":"NA","14":"1.759716e+18","15":"0","16":"NA","17":"NA","18":"NA"},{"1":"978-0641723445","2":"NA","3":"NA","4":"NA","5":"NA","6":"NA","7":"NA","8":"NA","9":"NA","10":"NA","11":"NA","12":"NA","13":"NA","14":"1.759716e+18","15":"NA","16":"{\\n    \"id\" : \"978-0641723445\",\\n    \"cat\" : [\"book\",\"hardcover\"],\\n    \"name\" : \"The Lightning Thief\",\\n    \"author\" : \"Rick Riordan\",\\n    \"series_t\" : \"Percy Jackson and the Olympians\",\\n    \"sequence_i\" : 1,\\n    \"genre_s\" : \"fantasy\",\\n    \"inStock\" : true,\\n    \"price\" : 12.50,\\n    \"pages_i\" : 384\\n  }","17":"NA","18":"NA"},{"1":"0679805273","2":"NA","3":"NA","4":"NA","5":"NA","6":"NA","7":"NA","8":"NA","9":"NA","10":"NA","11":"NA","12":"NA","13":"NA","14":"1.759716e+18","15":"NA","16":"{\"id\":\"0679805273\",\"name\":\"Oh, The Places You'll Go\",\"inStock\": true,\"author\": \"Dr. Seuss\"}","17":"NA","18":"NA"},{"1":"MA147LL/A","2":"Apple 60 GB iPod with Video Playback Black","3":"Apple Computer Inc.","4":"apple","5":"electronics,music","6":"iTunes, Podcasts, Audiobooks,Stores up to 15,000 songs, 25,000 photos, or 150 hours of video,2.5-inch, 320x240 color TFT LCD display with LED backlight,Up to 20 hours of battery life,Plays AAC, MP3, WAV, AIFF, Audible, Apple Lossless, H.264 video,Notes, Calendar, Phone book, Hold button, Date display, Photo wallet, Built-in games, JPEG photo playback, Upgradeable firmware, USB 2.0 compatibility, Playback speed control, Rechargeable capability, Battery level indication","7":"5.5","8":"399.00","9":"399.00,USD","10":"10","11":"TRUE","12":"37.7752,-100.0232","13":"2005-10-12T08:00:00Z","14":"1.759716e+18","15":"39900","16":"NA","17":"earbud headphones, USB cable","18":"NA"},{"1":"TWINX2048-3200PRO","2":"CORSAIR  XMS 2GB (2 x 1GB) 184-Pin DDR SDRAM Unbuffered DDR 400 (PC 3200) Dual Channel Kit System Memory - Retail","3":"Corsair Microsystems Inc.","4":"corsair","5":"electronics,memory","6":"CAS latency 2,  2-3-3-6 timing, 2.75v, unbuffered, heat-spreader","7":"NA","8":"185.00","9":"185.00,USD","10":"5","11":"TRUE","12":"37.7752,-122.4232","13":"2006-02-13T15:26:37Z","14":"1.759716e+18","15":"18500","16":"NA","17":"NA","18":"electronics|6.0 memory|3.0"},{"1":"VS1GB400C3","2":"CORSAIR ValueSelect 1GB 184-Pin DDR SDRAM Unbuffered DDR 400 (PC 3200) System Memory - Retail","3":"Corsair Microsystems Inc.","4":"corsair","5":"electronics,memory","6":"NA","7":"NA","8":"74.99","9":"74.99,USD","10":"7","11":"TRUE","12":"37.7752,-100.0232","13":"2006-02-13T15:26:37Z","14":"1.759716e+18","15":"7499","16":"NA","17":"NA","18":"electronics|4.0 memory|2.0"},{"1":"VDBDB1A16","2":"A-DATA V-Series 1GB 184-Pin DDR SDRAM Unbuffered DDR 400 (PC 3200) System Memory - OEM","3":"A-DATA Technology Inc.","4":"corsair","5":"electronics,memory","6":"CAS latency 3,   2.7v","7":"NA","8":"NA","9":"NA","10":"0","11":"TRUE","12":"45.18414,-93.88141","13":"2006-02-13T15:26:37Z","14":"1.759716e+18","15":"NA","16":"NA","17":"NA","18":"electronics|0.9 memory|0.1"},{"1":"3007WFP","2":"Dell Widescreen UltraSharp 3007WFP","3":"Dell, Inc.","4":"dell","5":"electronics and computer1","6":"30\" TFT active matrix LCD, 2560 x 1600, .25mm dot pitch, 700:1 contrast","7":"401.6","8":"2199.00","9":"2199.0,USD","10":"6","11":"TRUE","12":"43.17614,-90.57341","13":"NA","14":"1.759716e+18","15":"219900","16":"NA","17":"USB cable","18":"NA"},{"1":"USD","2":"One Dollar","3":"Bank of America","4":"boa","5":"currency","6":"Coins and notes","7":"NA","8":"NA","9":"1,USD","10":"NA","11":"TRUE","12":"NA","13":"NA","14":"1.759716e+18","15":"100","16":"NA","17":"NA","18":"NA"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># function to index all files in a folder</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>uploadAll<span class="ot">&lt;-</span> <span class="cf">function</span>(path, collection){</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  jsonFiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">path =</span> path,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                          <span class="at">pattern =</span> <span class="st">"*.json*"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">full.names =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">recursive =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                          )</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  jsonUpload <span class="ot">&lt;-</span><span class="cf">function</span>(file) (solr_client<span class="sc">$</span><span class="fu">update_json</span>(file, collection))</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(jsonFiles, jsonUpload)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  xmlFiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">path =</span> path,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                         <span class="at">pattern =</span> <span class="st">"*.xml"</span>,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                         <span class="at">full.names =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                         <span class="at">recursive =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                         )</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  xmlUpload <span class="ot">&lt;-</span><span class="cf">function</span>(file) (solr_client<span class="sc">$</span><span class="fu">update_xml</span>(file, collection))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(xmlFiles, xmlUpload)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  csvFiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">path =</span> path,</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>                       <span class="at">pattern =</span> <span class="st">"*.csv"</span>,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>                       <span class="at">full.names =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>                       <span class="at">recursive =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                       )</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>  csvUpload <span class="ot">&lt;-</span><span class="cf">function</span>(file) (solr_client<span class="sc">$</span><span class="fu">update_csv</span>(file, collection))</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(csvFiles, csvUpload)</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># runs the upload function</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">uploadAll</span>(<span class="st">"solr-files/example/exampledocs"</span>, <span class="st">"techproducts"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 10 × 24
-   id          cat   name   price price_c inStock author autho…¹ serie…² seque…³
-   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt; &lt;chr&gt;   &lt;lgl&gt;   &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;     &lt;int&gt;
- 1 0812521390  book  The …   6.99 6.99,U… FALSE   Glen … Glen C… The Ch…       1
- 2 0441385532  book  Jher…   7.95 7.95,U… FALSE   Steve… Steven… Vlad T…       1
- 3 0380014300  book  Nine…   6.99 6.99,U… TRUE    Roger… Roger … the Ch…       1
- 4 0805080481  book  The …   5.99 5.99,U… TRUE    Lloyd… Lloyd … The Ch…       1
- 5 080508049X  book  The …   5.99 5.99,U… TRUE    Lloyd… Lloyd … The Ch…       2
- 6 978-064172… &lt;NA&gt;  &lt;NA&gt;   NA    &lt;NA&gt;    NA      &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA
- 7 GB18030TEST &lt;NA&gt;  Test…   0    0.0,USD TRUE    &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA
- 8 IW-02       elec… iPod…  11.5  11.50,… FALSE   &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA
- 9 MA147LL/A   elec… Appl… 399    399.00… TRUE    &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA
-10 adata       &lt;NA&gt;  &lt;NA&gt;   NA    &lt;NA&gt;    NA      &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA
-# … with 14 more variables: genre_s &lt;chr&gt;, `_version_` &lt;dbl&gt;,
-#   price_c____l_ns &lt;int&gt;, `_src_` &lt;chr&gt;, features &lt;chr&gt;, manu &lt;chr&gt;,
-#   manu_id_s &lt;chr&gt;, weight &lt;dbl&gt;, popularity &lt;int&gt;, store &lt;chr&gt;,
-#   manufacturedate_dt &lt;chr&gt;, includes &lt;chr&gt;, compName_s &lt;chr&gt;,
-#   address_s &lt;chr&gt;, and abbreviated variable names ¹​author_s, ²​series_t,
-#   ³​sequence_i</code></pre>
+<pre><code>[[1]]
+[[1]]$responseHeader
+[[1]]$responseHeader$rf
+[1] 2
+
+[[1]]$responseHeader$status
+[1] 0
+
+[[1]]$responseHeader$QTime
+[1] 31</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"foundation"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 20
-  id    cat   name  price price_c inStock author autho…¹ serie…² seque…³ genre_s
-  &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;lgl&gt;   &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;     &lt;int&gt; &lt;chr&gt;  
-1 0553… book  Foun…  7.99 7.99,U… TRUE    Isaac… Isaac … Founda…       1 scifi  
-2 UTF8… soft… Test…  0    0.0,USD TRUE    &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA &lt;NA&gt;   
-3 SOLR… soft… Solr…  0    0.0,USD TRUE    &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA &lt;NA&gt;   
-4 /Use… &lt;NA&gt;  &lt;NA&gt;  NA    &lt;NA&gt;    NA      &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;         NA &lt;NA&gt;   
-# … with 9 more variables: `_version_` &lt;dbl&gt;, price_c____l_ns &lt;int&gt;,
-#   manu &lt;chr&gt;, features &lt;chr&gt;, popularity &lt;int&gt;, incubationdate_dt &lt;chr&gt;,
-#   resourcename &lt;chr&gt;, content_type &lt;chr&gt;, content &lt;chr&gt;, and abbreviated
-#   variable names ¹​author_s, ²​series_t, ³​sequence_i</code></pre>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># searching on a single term</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"foundation"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["id"],"name":[1],"type":["chr"],"align":["left"]},{"label":["cat"],"name":[2],"type":["chr"],"align":["left"]},{"label":["name"],"name":[3],"type":["chr"],"align":["left"]},{"label":["price"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["price_c"],"name":[5],"type":["chr"],"align":["left"]},{"label":["inStock"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["author"],"name":[7],"type":["chr"],"align":["left"]},{"label":["author_s"],"name":[8],"type":["chr"],"align":["left"]},{"label":["series_t"],"name":[9],"type":["chr"],"align":["left"]},{"label":["sequence_i"],"name":[10],"type":["int"],"align":["right"]},{"label":["genre_s"],"name":[11],"type":["chr"],"align":["left"]},{"label":["_version_"],"name":[12],"type":["dbl"],"align":["right"]},{"label":["price_c____l_ns"],"name":[13],"type":["int"],"align":["right"]},{"label":["manu"],"name":[14],"type":["chr"],"align":["left"]},{"label":["features"],"name":[15],"type":["chr"],"align":["left"]},{"label":["popularity"],"name":[16],"type":["int"],"align":["right"]},{"label":["incubationdate_dt"],"name":[17],"type":["chr"],"align":["left"]}],"data":[{"1":"0553293354","2":"book","3":"Foundation","4":"7.99","5":"7.99,USD","6":"TRUE","7":"Isaac Asimov","8":"Isaac Asimov","9":"Foundation Novels","10":"1","11":"scifi","12":"1.759716e+18","13":"799","14":"NA","15":"NA","16":"NA","17":"NA"},{"1":"UTF8TEST","2":"software,search","3":"Test with some UTF-8 encoded characters","4":"0.00","5":"0.0,USD","6":"TRUE","7":"NA","8":"NA","9":"NA","10":"NA","11":"NA","12":"1.759717e+18","13":"0","14":"Apache Software Foundation","15":"No accents here,This is an e acute: é,eaiou with circumflexes: êâîôû,eaiou with umlauts: ëäïöü,tag with escaped chars: <nicetag/>,escaped ampersand: Bonnie & Clyde,Outside the BMP:𐌈 codepoint=10308, a circle with an x inside. UTF8=f0908c88 UTF16=d800 df08","16":"NA","17":"NA"},{"1":"SOLR1000","2":"software,search","3":"Solr, the Enterprise Search Server","4":"0.00","5":"0.0,USD","6":"TRUE","7":"NA","8":"NA","9":"NA","10":"NA","11":"NA","12":"1.759717e+18","13":"0","14":"Apache Software Foundation","15":"Advanced Full-Text Search Capabilities using Lucene,Optimized for High Volume Web Traffic,Standards Based Open Interfaces - XML and HTTP,Comprehensive HTML Administration Interfaces,Scalability - Efficient Replication to other Solr Search Servers,Flexible and Adaptable with XML configuration and Schema,Good unicode support: héllo (hello with an accent over the e)","16":"10","17":"2006-01-17T00:00:00Z"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>genSearch <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"electronics"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>searchCat <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"cat:electronics"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(genSearch, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># returning the number of records found</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>genSearch <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"electronics"</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(genSearch, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 14</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(searchCat, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># searching in a specific category</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>searchCat <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"cat:electronics"</span>))</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>searchCat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["id"],"name":[1],"type":["chr"],"align":["left"]},{"label":["name"],"name":[2],"type":["chr"],"align":["left"]},{"label":["manu"],"name":[3],"type":["chr"],"align":["left"]},{"label":["manu_id_s"],"name":[4],"type":["chr"],"align":["left"]},{"label":["cat"],"name":[5],"type":["chr"],"align":["left"]},{"label":["features"],"name":[6],"type":["chr"],"align":["left"]},{"label":["price"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["price_c"],"name":[8],"type":["chr"],"align":["left"]},{"label":["popularity"],"name":[9],"type":["int"],"align":["right"]},{"label":["inStock"],"name":[10],"type":["lgl"],"align":["right"]},{"label":["manufacturedate_dt"],"name":[11],"type":["chr"],"align":["left"]},{"label":["store"],"name":[12],"type":["chr"],"align":["left"]},{"label":["_version_"],"name":[13],"type":["dbl"],"align":["right"]},{"label":["price_c____l_ns"],"name":[14],"type":["int"],"align":["right"]},{"label":["includes"],"name":[15],"type":["chr"],"align":["left"]},{"label":["weight"],"name":[16],"type":["dbl"],"align":["right"]},{"label":["payloads"],"name":[17],"type":["chr"],"align":["left"]}],"data":[{"1":"SP2514N","2":"Samsung SpinPoint P120 SP2514N - hard drive - 250 GB - ATA-133","3":"Samsung Electronics Co. Ltd.","4":"samsung","5":"electronics,hard drive","6":"7200RPM, 8MB cache, IDE Ultra ATA-133,NoiseGuard, SilentSeek technology, Fluid Dynamic Bearing (FDB) motor","7":"92.00","8":"92.0,USD","9":"6","10":"TRUE","11":"2006-02-13T15:26:37Z","12":"35.0752,-97.032","13":"1.759717e+18","14":"9200","15":"NA","16":"NA","17":"NA"},{"1":"6H500F0","2":"Maxtor DiamondMax 11 - hard drive - 500 GB - SATA-300","3":"Maxtor Corp.","4":"maxtor","5":"electronics,hard drive","6":"SATA 3.0Gb/s, NCQ,8.5ms seek,16MB cache","7":"350.00","8":"350.0,USD","9":"6","10":"TRUE","11":"2006-02-13T15:26:37Z","12":"45.17614,-93.87341","13":"1.759717e+18","14":"35000","15":"NA","16":"NA","17":"NA"},{"1":"9885A004","2":"Canon PowerShot SD500","3":"Canon Inc.","4":"canon","5":"electronics,camera","6":"3x zoop, 7.1 megapixel Digital ELPH,movie clips up to 640x480 @30 fps,2.0\" TFT LCD, 118,000 pixels,built in flash, red-eye reduction","7":"329.95","8":"329.95,USD","9":"7","10":"TRUE","11":"2006-02-13T15:26:37Z","12":"45.19614,-93.90341","13":"1.759717e+18","14":"32995","15":"32MB SD card, USB cable, AV cable, battery","16":"6.4","17":"NA"},{"1":"0579B002","2":"Canon PIXMA MP500 All-In-One Photo Printer","3":"Canon Inc.","4":"canon","5":"electronics,multifunction printer,printer,scanner,copier","6":"Multifunction ink-jet color photo printer,Flatbed scanner, optical scan resolution of 1,200 x 2,400 dpi,2.5\" color LCD preview screen,Duplex Copying,Printing speed up to 29ppm black, 19ppm color,Hi-Speed USB,memory card: CompactFlash, Micro Drive, SmartMedia, Memory Stick, Memory Stick Pro, SD Card, and MultiMediaCard","7":"179.99","8":"179.99,USD","9":"6","10":"TRUE","11":"NA","12":"45.19214,-93.89941","13":"1.759717e+18","14":"17999","15":"NA","16":"352.0","17":"NA"},{"1":"F8V7067-APL-KIT","2":"Belkin Mobile Power Cord for iPod w/ Dock","3":"Belkin","4":"belkin","5":"electronics,connector","6":"car power adapter, white","7":"19.95","8":"19.95,USD","9":"1","10":"FALSE","11":"2005-08-01T16:30:25Z","12":"45.18014,-93.87741","13":"1.759717e+18","14":"1995","15":"NA","16":"4.0","17":"NA"},{"1":"100-435805","2":"ATI Radeon X1900 XTX 512 MB PCIE Video Card","3":"ATI Technologies","4":"ati","5":"electronics,graphics card","6":"ATI RADEON X1900 GPU/VPU clocked at 650MHz,512MB GDDR3 SDRAM clocked at 1.55GHz,PCI Express x16,dual DVI, HDTV, svideo, composite out,OpenGL 2.0, DirectX 9.0","7":"649.99","8":"649.99,USD","9":"7","10":"FALSE","11":"2006-02-13T00:00:00Z","12":"40.7143,-74.006","13":"1.759717e+18","14":"64999","15":"NA","16":"48.0","17":"NA"},{"1":"MA147LL/A","2":"Apple 60 GB iPod with Video Playback Black","3":"Apple Computer Inc.","4":"apple","5":"electronics,music","6":"iTunes, Podcasts, Audiobooks,Stores up to 15,000 songs, 25,000 photos, or 150 hours of video,2.5-inch, 320x240 color TFT LCD display with LED backlight,Up to 20 hours of battery life,Plays AAC, MP3, WAV, AIFF, Audible, Apple Lossless, H.264 video,Notes, Calendar, Phone book, Hold button, Date display, Photo wallet, Built-in games, JPEG photo playback, Upgradeable firmware, USB 2.0 compatibility, Playback speed control, Rechargeable capability, Battery level indication","7":"399.00","8":"399.00,USD","9":"10","10":"TRUE","11":"2005-10-12T08:00:00Z","12":"37.7752,-100.0232","13":"1.759717e+18","14":"39900","15":"earbud headphones, USB cable","16":"5.5","17":"NA"},{"1":"IW-02","2":"iPod & iPod Mini USB 2.0 Cable","3":"Belkin","4":"belkin","5":"electronics,connector","6":"car power adapter for iPod, white","7":"11.50","8":"11.50,USD","9":"1","10":"FALSE","11":"2006-02-14T23:55:59Z","12":"37.7752,-122.4232","13":"1.759717e+18","14":"1150","15":"NA","16":"2.0","17":"NA"},{"1":"TWINX2048-3200PRO","2":"CORSAIR  XMS 2GB (2 x 1GB) 184-Pin DDR SDRAM Unbuffered DDR 400 (PC 3200) Dual Channel Kit System Memory - Retail","3":"Corsair Microsystems Inc.","4":"corsair","5":"electronics,memory","6":"CAS latency 2,  2-3-3-6 timing, 2.75v, unbuffered, heat-spreader","7":"185.00","8":"185.00,USD","9":"5","10":"TRUE","11":"2006-02-13T15:26:37Z","12":"37.7752,-122.4232","13":"1.759717e+18","14":"18500","15":"NA","16":"NA","17":"electronics|6.0 memory|3.0"},{"1":"VS1GB400C3","2":"CORSAIR ValueSelect 1GB 184-Pin DDR SDRAM Unbuffered DDR 400 (PC 3200) System Memory - Retail","3":"Corsair Microsystems Inc.","4":"corsair","5":"electronics,memory","6":"NA","7":"74.99","8":"74.99,USD","9":"7","10":"TRUE","11":"2006-02-13T15:26:37Z","12":"37.7752,-100.0232","13":"1.759717e+18","14":"7499","15":"NA","16":"NA","17":"electronics|4.0 memory|2.0"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(searchCat, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 12</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">collection_exists</span>(solr_client, <span class="st">"books2"</span>)) {</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collection_create</span>(solr_client, <span class="at">name =</span> <span class="st">"books2"</span>, <span class="at">numShards =</span> <span class="dv">2</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>%2B is encoded “+”</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>compSearch <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"+electronics +music"</span>))</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(compSearch, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>compSearch <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"+electronics +music"</span>))</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(compSearch, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 1</code></pre>
 </div>
 </div>
-<p>Find all electronics but dont contain term “music”</p>
+<p>Find all electronics but don’t contain term “music”</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>mixSearch <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"+electronics -music"</span>))</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(mixSearch, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>mixSearch <span class="ot">&lt;-</span> solr_client<span class="sc">$</span><span class="fu">search</span>(<span class="at">name =</span> <span class="st">"techproducts"</span>, <span class="at">params =</span> <span class="fu">list</span>(<span class="at">q =</span> <span class="st">"+electronics -music"</span>))</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(mixSearch, <span class="st">"numFound"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 13</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>file <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">"examples"</span>, <span class="st">"books.json"</span>, <span class="at">package =</span> <span class="st">"solrium"</span>)</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>solr_client<span class="sc">$</span><span class="fu">update_json</span>(file, <span class="st">"books"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$responseHeader
-$responseHeader$rf
-[1] 1
-
-$responseHeader$status
-[1] 0
-
-$responseHeader$QTime
-[1] 236</code></pre>
 </div>
 </div>
 </section>

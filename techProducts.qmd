@@ -1,8 +1,9 @@
 ---
 title: "Indexing techproducts"
 author: "Cath Riddoch"
-format: html
-editor: visual
+format:
+  html:
+    df-print: paged
 ---
 
 ## Starting the server
@@ -13,15 +14,12 @@ and started two nodes
 
 ![](Screenshot%202023-02-28%20at%2010.46.17%20am.png)
 
-Adding data to index
-
-\``bin/post -c techproducts example/exampledocs/*`\`
-
-Install solarium
+## Initial setup of Solarium
 
 ```{r}
+#| warning: false
 #install.packages("solrium")
-library(solrium)
+library(solrium) 
 
 # load tidyverse
 library(tidyverse)
@@ -33,21 +31,24 @@ solr_client <- SolrClient$new()
 ```
 
 ```{r}
-
+#create the collection
  if (!solr_client$collection_exists("techproducts")) {
 	 solr_client$collection_create(name = "techproducts",
-                              maxShardsPerNode = 2,
-                              numShards = 2,
-                              replicationFactor = 2,
-                              collection.configName = "techproducts"
-                              )
+                                  maxShardsPerNode = 2,
+                                  numShards = 2,
+                                  replicationFactor = 2,
+                                  collection.configName = "techproducts"
+                                )
  }
 
 ```
 
+![](images/Screenshot%202023-03-07%20at%201.50.52%20pm.png)
+
 This creates an empty collection. Search for everything carried out to check.
 
 ```{r}
+#check collection exists and is empty
 solr_client$search(name = "techproducts", params = list(q = "*:*"))
 ```
 
@@ -55,7 +56,7 @@ solr_client$search(name = "techproducts", params = list(q = "*:*"))
 # function to index all files in a folder
 uploadAll<- function(path, collection){
   jsonFiles <- list.files(path = path,
-                          pattern = "*.json",
+                          pattern = "*.json*",
                           full.names = TRUE,
                           recursive = FALSE
                           )
@@ -83,21 +84,29 @@ uploadAll<- function(path, collection){
 
 ```{r}
 # runs the upload function
+# note does not find or index .sh files
 uploadAll("solr-files/example/exampledocs", "techproducts")
 ```
 
 ```{r}
+# searching on a single term
 solr_client$search(name = "techproducts", params = list(q = "foundation"))
 ```
 
 ```{r}
+# returning the number of records found
 genSearch <- solr_client$search(name = "techproducts", params = list(q = "electronics"))
 attr(genSearch, "numFound")
 
 ```
 
 ```{r}
+# searching in a specific category
 searchCat <- solr_client$search(name = "techproducts", params = list(q = "cat:electronics"))
+searchCat
+```
+
+```{r}
 attr(searchCat, "numFound")
 ```
 
@@ -113,3 +122,12 @@ mixSearch <- solr_client$search(name = "techproducts", params = list(q = "+elect
 attr(mixSearch, "numFound")
 
 ```
+
+```{r}
+# phrase search
+phraseSearch <- solr_client$search(name = "techproducts", params = list(q = "CAS+latency"))
+attr(phraseSearch, "numFound")
+
+```
+
+`solr_all()` differs from `solr_search()` in that it allows specifying facets, mlt, groups, stats, etc, and returns all of those. It defaults to `parsetype = "list"` and `wt="json"`, whereas `solr_search()` defaults to `parsetype = "df"` and `wt="csv"`. `solr_all()` returns by default a list, whereas `solr_search()` by default returns a data.frame.
