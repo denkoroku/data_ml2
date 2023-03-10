@@ -30,7 +30,6 @@ solr_client <- SolrClient$new()
                                   maxShardsPerNode = 2,
                                   numShards = 2,
                                   replicationFactor = 2,
-              
                                 )
  }
 ```
@@ -48,7 +47,8 @@ Edit at the command line
 ``` ``curl -X POST -H 'Content-type:application/json' --data-binary '{"add-field": {"name":"name", "type":"text_general", "multiValued":false, "stored":true}}' http://localhost:8983/solr/films/schema`` ```
 
 ```{r}
-schema(solr_client, name = "films", "fields")
+schema_result <- schema(solr_client, name = "films", "fields")
+schema_result$fields
 ```
 
 This shows that now there is an explicitly defined field called name which is a text field.
@@ -91,6 +91,8 @@ uploadAll<- function(path, collection){
 uploadAll("solr-files/example/films", "films")
 ```
 
+## Searching the Data
+
 ```{r}
 # searching everything
 checkUpload <- solr_client$search(name = "films", params = list(q = "*:*"))
@@ -98,64 +100,59 @@ attr(checkUpload, "numFound")
 ```
 
 ```{r}
-solr_facet(solr_client, "films", params = list(q='*:*', facet.field='genre_str'))
+# gets the results from solr
+facet_search1 <- solr_facet(solr_client,
+                            "films",
+                            params = list(q='*:*',
+                                          facet.field = 'genre_str'
+                                          )
+                            )
+
+# display results nicely without header info
+facet_search1$facet_fields$genre_str
 ```
 
 ```{r}
 # controlling the number of items in a bucket
-solr_facet(solr_client, "films", params = list(q='*:*', facet.field='genre_str',
-facet.mincount='200'))
+facet_search2 <- solr_facet(solr_client,
+                            "films",
+                            params = list(q = '*:*',
+                                          facet.field = 'genre_str',
+                                          facet.mincount = '200'
+                                          )
+                            )
+facet_search2$facet_fields$genre_str
 ```
 
 ```{r}
-solr_facet(solr_client,"films", params = list(q = '*:*',
-                                              facet.range = 'initial_release_date',
-                                              facet.limit = "300",
-                                              facet.range.start = 'NOW/YEAR-25YEARS',
-                                              facet.range.end = 'NOW',
-                                              facet.range.gap = '+1YEAR'
-                                              )
-           )
+facet_search3 <- solr_facet(solr_client,
+                            "films",
+                            params = list(q = '*:*',
+                                          facet.range = 'initial_release_date',
+                                          facet.limit = "300",
+                                          facet.range.start = 'NOW/YEAR-25YEARS',
+                                          facet.range.end = 'NOW',
+                                          facet.range.gap = '+1YEAR'
+                                          )
+                            )
+facet_search3$facet_ranges$initial_release_date
 ```
 
 ```{r}
-solr_facet(solr_client,"films", params = list(q ='*:*',
-                                              facet.pivot = "genre_str,directed_by_str",
-                                              facet = TRUE
-                                              )
-           )
+pivotResult<- solr_facet(solr_client,
+                         "films",
+                         params = list(q ='*:*',
+                                      facet.pivot = "genre_str,directed_by_str",
+                                      facet = TRUE
+                                      )
+                        )
 
+genreList<- unlist(pivotResult$facet_pivot$`genre_str,directed_by_str`$genre_str)
+directorList<- unlist(pivotResult$facet_pivot$`genre_str,directed_by_str`$directed_by_str)
+countList<- unlist(pivotResult$facet_pivot$`genre_str,directed_by_str`$count)
+
+pivot_result_df <- data.frame(genreList, directorList, countList)
+pivot_result_df
 ```
 
-```{r}
-```
-
-```{r}
-library(curl)
-new_handle() %>%
-  handle_setopt(copypostfields = "moo=moomooo") %>%
-  handle_setheaders("Content-Type"="text/moo", "Cache-Control"="no-cache", "User-Agent"="A cow") %>%
-  curl_fetch_memory(url = "http://localhost:8983/solr/films/select?q=\*:*&rows=0&facet=on&facet.pivot=genre_str,directed_by_str"
-BASH
-copy icon
-") %$% content %>% 
-  rawToChar %>% jsonlite::prettify()
-```
-
-```{r}
-req <- curl_fetch_memory("http://localhost:8983/solr/films/select?q=*:*")
-str(req)
-
-
-```
-
-```{r}
-jsonlite::prettify(rawToChar(req$content))
-```
-
-&rows=0&facet=on&facet.pivot=genre_str,directed_by_str
-
-```{r}
-reqPiv <- curl_fetch_memory("http://localhost:8983/solr/films/select?q=*:*&rows=0&facet=on&facet.pivot=genre_str,directed_by_str")
-jsonlite::prettify(rawToChar(reqPiv$content))
-```
+## Sorting and Ranking
